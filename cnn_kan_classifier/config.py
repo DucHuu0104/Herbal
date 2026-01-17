@@ -6,8 +6,9 @@ import os
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Support multiple datasets
-TRAIN_DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "Dataset_1_Cleaned")
-TEST_DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "Dataset_2_Cleaned")
+TRAIN_DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "Chinese medicinal blossom-dataset", "ImageDatastore", "Partition", "Train")
+VAL_DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "Chinese medicinal blossom-dataset", "ImageDatastore", "Partition", "Val")
+TEST_DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "Chinese medicinal blossom-dataset", "ImageDatastore", "Partition", "Test")
 
 # Support multiple datasets (deprecated, kept for compatibility)
 DATA_DIRS = [TRAIN_DATA_DIR]
@@ -23,7 +24,7 @@ IMAGE_SIZE = 224
 NUM_CHANNELS = 3
 
 # Dataset settings
-NUM_CLASSES = 20
+NUM_CLASSES = 12
 TRAIN_SPLIT = 0.8
 VAL_SPLIT = 0.2
 
@@ -35,7 +36,7 @@ WEIGHT_DECAY = 1e-4
 NUM_WORKERS = 4
 
 # KAN settings
-KAN_HIDDEN_DIMS = [64, 32]  # Hidden layers: 512 -> 64 -> 32 -> 20
+KAN_HIDDEN_DIMS = [64, 32]  # Hidden layers: 512 -> 64 -> 32 -> 12
 SPLINE_ORDER = 3  # B-spline order
 GRID_SIZE = 5  # Number of grid intervals for splines
 

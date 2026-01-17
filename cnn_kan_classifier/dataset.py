@@ -123,26 +123,33 @@ def get_transforms(use_strong_aug=False):
 
 
 def get_dataloaders():
-    """Create train and validation dataloaders"""
+    """Create train, validation and test dataloaders"""
     # Set seed for reproducibility
     torch.manual_seed(config.SEED)
     
     # Get transforms
     train_transform, val_transform = get_transforms()
     
-    # Load full dataset from ALL directories
+    # Load TRAIN dataset
     train_dataset_full = HerbDataset(config.TRAIN_DATA_DIR, transform=None)
     
-    # Load TEST dataset from Dataset_2
+    # Load VAL dataset
+    val_dataset_full = HerbDataset(config.VAL_DATA_DIR, transform=None)
+    
+    # Load TEST dataset
     test_dataset_full = HerbDataset(config.TEST_DATA_DIR, transform=None)
     
     # Create train dataset with augmentation
     train_indices = list(range(len(train_dataset_full)))
     train_dataset = TransformSubset(train_dataset_full, train_indices, train_transform)
     
-    # Create test/val dataset without augmentation
+    # Create val dataset without augmentation
+    val_indices = list(range(len(val_dataset_full)))
+    val_dataset = TransformSubset(val_dataset_full, val_indices, val_transform)
+    
+    # Create test dataset without augmentation
     test_indices = list(range(len(test_dataset_full)))
-    val_dataset = TransformSubset(test_dataset_full, test_indices, val_transform)
+    test_dataset = TransformSubset(test_dataset_full, test_indices, val_transform)
     
     # Create dataloaders
     train_loader = DataLoader(
@@ -161,15 +168,24 @@ def get_dataloaders():
         pin_memory=True
     )
     
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=config.BATCH_SIZE,
+        shuffle=False,
+        num_workers=config.NUM_WORKERS,
+        pin_memory=True
+    )
+    
     train_size = len(train_dataset_full)
-    val_size = len(test_dataset_full)
-    total_size = train_size + val_size
+    val_size = len(val_dataset_full)
+    test_size = len(test_dataset_full)
+    total_size = train_size + val_size + test_size
     
     print(f"Dataset loaded: {total_size} images, {len(train_dataset_full.classes)} classes")
-    print(f"Train: {train_size} images | Val: {val_size} images")
+    print(f"Train: {train_size} | Val: {val_size} | Test: {test_size}")
     print(f"Classes: {train_dataset_full.classes}")
     
-    return train_loader, val_loader, train_dataset_full.classes
+    return train_loader, val_loader, test_loader, train_dataset_full.classes
 
 
 class TransformSubset(Dataset):

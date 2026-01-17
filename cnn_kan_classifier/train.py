@@ -22,16 +22,20 @@ class Trainer:
         model,
         train_loader,
         val_loader,
+        test_loader=None,
         device=config.DEVICE,
         lr=config.LEARNING_RATE,
         weight_decay=config.WEIGHT_DECAY,
         num_epochs=config.NUM_EPOCHS,
+        test_every=5,  # Test every N epochs
     ):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
+        self.test_loader = test_loader
         self.device = device
         self.num_epochs = num_epochs
+        self.test_every = test_every
         
         # Loss function
         self.criterion = nn.CrossEntropyLoss()
@@ -52,11 +56,14 @@ class Trainer:
         
         # Tracking
         self.best_val_acc = 0.0
+        self.best_test_acc = 0.0
         self.history = {
             'train_loss': [],
             'train_acc': [],
             'val_loss': [],
             'val_acc': [],
+            'test_loss': [],
+            'test_acc': [],
             'lr': []
         }
         
@@ -126,6 +133,34 @@ class Trainer:
         
         return epoch_loss, epoch_acc
     
+    @torch.no_grad()
+    def test(self):
+        """Test the model on test set"""
+        if self.test_loader is None:
+            return None, None
+        
+        self.model.eval()
+        total_loss = 0.0
+        correct = 0
+        total = 0
+        
+        for images, labels in tqdm(self.test_loader, desc="Testing"):
+            images = images.to(self.device)
+            labels = labels.to(self.device)
+            
+            outputs = self.model(images)
+            loss = self.criterion(outputs, labels)
+            
+            total_loss += loss.item() * images.size(0)
+            _, predicted = outputs.max(1)
+            correct += predicted.eq(labels).sum().item()
+            total += labels.size(0)
+        
+        epoch_loss = total_loss / total
+        epoch_acc = 100. * correct / total
+        
+        return epoch_loss, epoch_acc
+    
     def train(self):
         """Full training loop"""
         print(f"\nTraining on {self.device}")
@@ -166,6 +201,15 @@ class Trainer:
                 self.best_val_acc = val_acc
                 self.save_checkpoint(epoch, is_best=True)
                 print(f"★ New best model saved! Val Acc: {val_acc:.2f}%")
+            
+            # Test every N epochs
+            if self.test_loader is not None and epoch % self.test_every == 0:
+                test_loss, test_acc = self.test()
+                self.history['test_loss'].append(test_loss)
+                self.history['test_acc'].append(test_acc)
+                print(f"🧪 Test Loss: {test_loss:.4f} | Test Acc: {test_acc:.2f}%")
+                if test_acc > self.best_test_acc:
+                    self.best_test_acc = test_acc
         
         total_time = time.time() - start_time
         print("\n" + "=" * 60)
@@ -206,7 +250,7 @@ class Trainer:
 def train_model(use_kan=True):
     """Train the model"""
     # Get dataloaders
-    train_loader, val_loader, classes = get_dataloaders()
+    train_loader, val_loader, test_loader, classes = get_dataloaders()
     
     # Create model
     if use_kan:
@@ -221,7 +265,8 @@ def train_model(use_kan=True):
     print(f"  Trainable: {trainable:,}")
     
     # Create trainer and train
-    trainer = Trainer(model, train_loader, val_loader)
+    # Use separate test_loader for testing every 5 epochs
+    trainer = Trainer(model, train_loader, val_loader, test_loader=test_loader, test_every=5)
     history = trainer.train()
     
     return history, classes
