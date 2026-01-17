@@ -6,10 +6,11 @@ import os
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Support multiple datasets
-DATA_DIRS = [
-    os.path.join(os.path.dirname(BASE_DIR), "Dataset_1_Cleaned"),
-    os.path.join(os.path.dirname(BASE_DIR), "Dataset_2_Cleaned"),
-]
+TRAIN_DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "Dataset_1_Cleaned")
+TEST_DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "Dataset_2_Cleaned")
+
+# Support multiple datasets (deprecated, kept for compatibility)
+DATA_DIRS = [TRAIN_DATA_DIR]
 # For backward compatibility
 DATA_DIR = DATA_DIRS[0]
 
@@ -27,7 +28,7 @@ TRAIN_SPLIT = 0.8
 VAL_SPLIT = 0.2
 
 # Training settings
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 NUM_EPOCHS = 50
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4

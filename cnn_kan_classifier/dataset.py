@@ -71,7 +71,7 @@ class HerbDataset(Dataset):
         return image, label
 
 
-def get_transforms(use_strong_aug=True):
+def get_transforms(use_strong_aug=False):
     """Get train and validation transforms
     
     Args:
@@ -131,21 +131,18 @@ def get_dataloaders():
     train_transform, val_transform = get_transforms()
     
     # Load full dataset from ALL directories
-    full_dataset = HerbDataset(config.DATA_DIRS, transform=None)
+    train_dataset_full = HerbDataset(config.TRAIN_DATA_DIR, transform=None)
     
-    # Calculate split sizes
-    total_size = len(full_dataset)
-    train_size = int(config.TRAIN_SPLIT * total_size)
-    val_size = total_size - train_size
+    # Load TEST dataset from Dataset_2
+    test_dataset_full = HerbDataset(config.TEST_DATA_DIR, transform=None)
     
-    # Split indices
-    indices = torch.randperm(total_size).tolist()
-    train_indices = indices[:train_size]
-    val_indices = indices[train_size:]
+    # Create train dataset with augmentation
+    train_indices = list(range(len(train_dataset_full)))
+    train_dataset = TransformSubset(train_dataset_full, train_indices, train_transform)
     
-    # Create subset datasets with appropriate transforms
-    train_dataset = TransformSubset(full_dataset, train_indices, train_transform)
-    val_dataset = TransformSubset(full_dataset, val_indices, val_transform)
+    # Create test/val dataset without augmentation
+    test_indices = list(range(len(test_dataset_full)))
+    val_dataset = TransformSubset(test_dataset_full, test_indices, val_transform)
     
     # Create dataloaders
     train_loader = DataLoader(
@@ -164,11 +161,15 @@ def get_dataloaders():
         pin_memory=True
     )
     
-    print(f"Dataset loaded: {total_size} images, {len(full_dataset.classes)} classes")
-    print(f"Train: {train_size} images | Val: {val_size} images")
-    print(f"Classes: {full_dataset.classes}")
+    train_size = len(train_dataset_full)
+    val_size = len(test_dataset_full)
+    total_size = train_size + val_size
     
-    return train_loader, val_loader, full_dataset.classes
+    print(f"Dataset loaded: {total_size} images, {len(train_dataset_full.classes)} classes")
+    print(f"Train: {train_size} images | Val: {val_size} images")
+    print(f"Classes: {train_dataset_full.classes}")
+    
+    return train_loader, val_loader, train_dataset_full.classes
 
 
 class TransformSubset(Dataset):
